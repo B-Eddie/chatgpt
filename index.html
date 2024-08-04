@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local GPT Chat</title>
+</head>
+<body>
+    <h1>Local GPT Chat</h1>
+    <textarea id="inputText" rows="4" cols="50" placeholder="Type your message here..."></textarea><br>
+    <button onclick="sendMessage()">Send</button>
+    <h2>Response:</h2>
+    <p id="responseText"></p>
+
+    <script>
+        async function sendMessage() {
+            const inputText = document.getElementById('inputText').value;
+            const responseText = document.getElementById('responseText');
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: inputText })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok' + response.status);
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    responseText.textContent = 'Error: ' + data.error;
+                } else {
+                    responseText.textContent = data.text;
+                }
+            } catch (error) {
+                responseText.textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

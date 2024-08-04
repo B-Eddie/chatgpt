@@ -3,13 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math AI Chatbot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>ScuffedAI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .message.user {
+            text-align: right;
+        }
+        .message.ai {
+            text-align: left;
+            color: #007bff;
+        }
+        .input-group {
+            display: flex;
+            margin-top: 20px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .input-group button {
+            padding: 10px;
+            border: none;
+            background-color: #007bff;
+            color: #ffffff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div id="chat-box"></div>
-    <input type="text" id="input-box" placeholder="Type your math problem here...">
-    <button onclick="sendProblem()">Submit</button>
+    <div class="chat-container">
+        <div id="chat-box"></div>
+        <div class="input-group">
+            <input type="text" id="user-input" placeholder="Type your message..." onkeydown="handleKeyDown(event)" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function appendMessage(content, type) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.textContent = content;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to bottom
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const userInput = input.value.trim();
+            if (userInput) {
+                appendMessage(userInput, 'user');
+                input.value = '';
+
+                fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `user_input=${encodeURIComponent(userInput)}`,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    appendMessage(data.reply, 'ai');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent the default action of the Enter key
+                sendMessage();
+            }
+        }
+    </script>
 </body>
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </html>

@@ -1,45 +1,57 @@
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from flask import Flask, request, jsonify, render_template
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-class DistilChatGPT:
-    def __init__(self):
-        # Load pre-trained model and tokenizer for distilgpt2
-        self.tokenizer = GPT2Tokenizer.from_pretrained("distilgpt2")
-        self.model = GPT2LMHeadModel.from_pretrained("distilgpt2")
-        self.model.eval()  # Set the model to evaluation mode
+app = Flask(__name__)
 
-    def generate_response(self, prompt):
-        # Encode the input prompt
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
-        input_ids = inputs["input_ids"]
-        attention_mask = inputs["attention_mask"]
+# Initialize the DialoGPT-large model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-large")
+model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-large")
+
+history = []
+
+def generate_reply(prompt, history):
+    """Generates a conversational reply based on the user's input and conversation history."""
+    try:
+        # Add the new user prompt to the conversation history
+        conversation = "\n".join(history) + f"\nUser: {prompt}\nAI:"
         
-        # Generate response
-        with torch.no_grad():
-            outputs = self.model.generate(
-                input_ids,
-                attention_mask=attention_mask,
-                max_length=2,
-                num_return_sequences=1,
-                pad_token_id=self.tokenizer.eos_token_id
-            )
+        # Tokenize the conversation
+        inputs = tokenizer.encode(conversation + tokenizer.eos_token, return_tensors='pt')
         
-        # Decode the response
-        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        return response
+        # Generate a reply
+        response = model.generate(
+            inputs,
+            max_length=1500,  # Adjust max_length as needed
+            pad_token_id=tokenizer.eos_token_id,
+            temperature=0.7,
+            do_sample=True,
+            eos_token_id=tokenizer.eos_token_id  # Ensure EOS token is used
+        )
+        
+        # Extract generated reply
+        generated_reply = tokenizer.decode(response[:, inputs.shape[-1]:][0], skip_special_tokens=True)
+        
+        return generated_reply
+    except Exception as e:
+        # Log the exception for debugging
+        print(f"Error in generate_reply: {e}")
+        return None
 
-    def chat(self):
-        print("DistilGPT2 (local). Type 'exit' to end the chat.")
-        while True:
-            try:
-                user_input = input("You: ")
-                if user_input.lower() == 'exit':
-                    break
-                response = self.generate_response(user_input)
-                print("ChatGPT: " + response)
-            except Exception as e:
-                print(f"An error occurred: {e}")
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-if __name__ == "__main__":
-    chatgpt = DistilChatGPT()
-    chatgpt.chat()
+@app.route('/ask', methods=['POST'])
+def ask():
+    user_input = request.form['user_input']
+    history.append(f"User: {user_input}")
+    ai_reply = generate_reply(user_input, history)
+    if ai_reply:
+        history.append(f"AI: {ai_reply}")
+        return jsonify({'reply': ai_reply})
+    else:
+        return jsonify({'reply': "Failed to generate a reply."})
+
+if __name__ == '__main__':
+    app.run(debug=True)
