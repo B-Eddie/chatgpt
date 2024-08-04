@@ -49,6 +49,7 @@ def ask():
     ai_reply = generate_reply(user_input, history)
     if ai_reply:
         history.append(f"AI: {ai_reply}")
+        print(ai_reply)
         return jsonify({'reply': ai_reply})
     else:
         return jsonify({'reply': "Failed to generate a reply."})
