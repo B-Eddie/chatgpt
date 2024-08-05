@@ -108,6 +108,23 @@
         .input-group button:hover {
             background: #0056b3;
         }
+        .dark-mode .chat-container {
+            background: #333;
+            color: #f7f9fc;
+        }
+        .dark-mode .message.user {
+            background: #0056b3;
+        }
+        .dark-mode .message.ai {
+            background: #444;
+        }
+        .message-reactions {
+            display: flex;
+            gap: 5px;
+        }
+        .message-reaction {
+            cursor: pointer;
+        }
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -127,6 +144,8 @@
             <input type="text" id="user-input" placeholder="Type your message..." onkeydown="handleKeyDown(event)" />
             <button onclick="sendMessage()">Send</button>
         </div>
+        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+        <button onclick="exportChat()">Export Chat</button>
     </div>
 
     <script>
@@ -177,6 +196,21 @@
                 event.preventDefault(); // Prevent the default action of the Enter key
                 sendMessage();
             }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        function exportChat() {
+            fetch('/export')
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
     </script>
 </body>
