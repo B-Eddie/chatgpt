@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/20546d7d-1f3e-45d2-bdfa-c86c2c9f502c)
+
+
 # Scuffed AI
 A local ai
 
